@@ -15,6 +15,7 @@ servers, no tracking. Everything stays on your device.
 - 📸 **Memories** · 🎟️ **Coupons** · ⏳ **Time capsules** (AES-GCM sealed)
 - 🔗 **Surprise links** (`#/l/…`) — no account needed to open
 - 📲 **PWA** — installable, works offline · 🤖 **Android bridge** (`android/`)
+- 🔜 **E2EE chat** — protocol frozen (`docs/e2ee-protocol.md`), Supabase pairing next
 
 ## 🚀 Run it
 

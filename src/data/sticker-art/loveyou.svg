@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <text x="256" y="250" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-weight="bold" font-size="118" fill="#8f3d2c">love</text>
+  <text x="256" y="365" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-weight="bold" font-size="118" fill="#8f3d2c">you</text>
+  <path d="M398 120c-14-16-38-16-50 0-12-16-36-16-50 0-12 14-8 32 8 46l42 34 42-34c16-14 20-32 8-46z" fill="#d94f4f" stroke="#4a2436" stroke-width="11" stroke-linejoin="round"/>
+  <path d="M116 350c-11-13-30-13-39 0-9 11-6 25 7 36l32 27 32-27c13-11 16-25 7-36-9-13-28-13-39 0z" fill="#e8b04b" stroke="#4a2436" stroke-width="10" stroke-linejoin="round"/>
+</svg>

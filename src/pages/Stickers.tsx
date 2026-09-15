@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ShareBox from '../components/ShareBox';
+import { STICKER_ART } from '../data/stickerArt';
 import { checkImageFile, fileToDataUrl } from '../lib/images';
 import { renderSticker, STICKER_PX, stickerToDataUrl, stickerToTrayUrl } from '../lib/stickerRender';
 import { cleanText } from '../lib/sanitize';
@@ -366,6 +367,21 @@ export default function Stickers(): React.ReactElement {
                 {EMOJI_CHOICES.map((e) => (
                   <button key={e} className="chip" aria-label={`Add emoji ${e}`} onClick={() => addElement({ kind: 'emoji', x: 256, y: 256, scale: 1, rotation: 0, text: e, size: 130 })}>
                     {e}
+                  </button>
+                ))}
+              </div>
+              <label style={{ marginTop: '0.6rem' }}>💋 Sweethearts art <span className="hint">— original LoveKit stickers, tap to add</span></label>
+              <div className="chips">
+                {STICKER_ART.map((a) => (
+                  <button
+                    key={a.id}
+                    className="chip"
+                    title={a.name}
+                    aria-label={`Add ${a.name} artwork`}
+                    onClick={() => addElement({ kind: 'image', x: 256, y: 256, scale: 1, rotation: 0, image: a.url, size: 300 })}
+                  >
+                    <img src={a.url} alt="" aria-hidden="true" width={28} height={28} style={{ verticalAlign: '-7px', marginRight: 4 }} />
+                    {a.name}
                   </button>
                 ))}
               </div>

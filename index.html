@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="LoveKit — the open-source toolkit for meaningful relationships. Cards, stickers, games, memories, coupons and time capsules for real couples." />
+    <meta name="theme-color" content="#2b1a22" />
+    <title>LoveKit ❤️ — Build moments, not algorithms</title>
+    <script>
+      // Pre-paint theme (and motion) to avoid a flash on load.
+      try {
+        var s = JSON.parse(localStorage.getItem('lovekit.settings.v1') || '{}');
+        var dark = s.theme === 'dark' || (s.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        if (s.reduceMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          document.documentElement.classList.add('reduce-motion');
+        }
+      } catch (e) { document.documentElement.dataset.theme = 'light'; }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ShareBox from '../components/ShareBox';
-import { fileToDataUrl } from '../lib/images';
+import { checkImageFile, fileToDataUrl } from '../lib/images';
 import { renderSticker, STICKER_PX, stickerToDataUrl, stickerToTrayUrl } from '../lib/stickerRender';
 import { cleanText } from '../lib/sanitize';
-import { KEYS, load, save, uid } from '../lib/store';
+import { KEYS, isPack, isSticker, loadArray, save, uid } from '../lib/store';
 import type { Sticker, StickerElement, StickerPack } from '../lib/types';
 import {
   IMPORT_STEPS,
@@ -49,8 +49,8 @@ function hitRadius(el: StickerElement): { w: number; h: number } {
 }
 
 export default function Stickers(): React.ReactElement {
-  const [items, setItems] = useState<Sticker[]>(() => load<Sticker[]>(STICKER_KEY, []));
-  const [packs, setPacks] = useState<StickerPack[]>(() => load<StickerPack[]>(KEYS.packs, []));
+  const [items, setItems] = useState<Sticker[]>(() => loadArray(STICKER_KEY, isSticker));
+  const [packs, setPacks] = useState<StickerPack[]>(() => loadArray(KEYS.packs, isPack));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hist, setHist] = useState<StickerElement[][]>([]);
@@ -165,8 +165,9 @@ export default function Stickers(): React.ReactElement {
 
   const onImageFile = async (file: File | undefined) => {
     if (!file || !active) return;
-    if (!file.type.startsWith('image/')) {
-      setNotice({ kind: 'bad', text: 'That is not an image file.' });
+    const problem = checkImageFile(file);
+    if (problem) {
+      setNotice({ kind: 'bad', text: problem });
       return;
     }
     try {
@@ -471,6 +472,16 @@ export default function Stickers(): React.ReactElement {
                   <label htmlFor="el-scale">Scale: {Math.round(selected.scale * 100)}%</label>
                   <input id="el-scale" type="range" min={20} max={300} value={Math.round(selected.scale * 100)} onChange={(e) => patchSelected({ scale: Number(e.target.value) / 100 }, true)} />
                 </div>
+                <div className="field">
+                  <label id="el-nudge">Nudge position <span className="hint">(keyboard friendly — 8px steps)</span></label>
+                  <div className="share-box" role="group" aria-labelledby="el-nudge">
+                    <button className="btn btn-ghost btn-sm" aria-label="Move layer up" onClick={() => patchSelected({ y: selected.y - 8 }, true)}>↑</button>
+                    <button className="btn btn-ghost btn-sm" aria-label="Move layer down" onClick={() => patchSelected({ y: selected.y + 8 }, true)}>↓</button>
+                    <button className="btn btn-ghost btn-sm" aria-label="Move layer left" onClick={() => patchSelected({ x: selected.x - 8 }, true)}>←</button>
+                    <button className="btn btn-ghost btn-sm" aria-label="Move layer right" onClick={() => patchSelected({ x: selected.x + 8 }, true)}>→</button>
+                    <button className="btn btn-ghost btn-sm" aria-label="Centre layer" onClick={() => patchSelected({ x: 256, y: 256 }, true)}>◎</button>
+                  </div>
+                </div>
                 <div className="share-box">
                   <button className="btn btn-ghost btn-sm" onClick={() => patchSelected({ rotation: (selected.rotation + 15) % 360 }, true)}>⟳ +15°</button>
                   <button
@@ -555,7 +566,9 @@ export default function Stickers(): React.ReactElement {
                           const s = items.find((x) => x.id === sid);
                           return { id: sid, name: s?.name ?? sid };
                         });
-                        downloadText(packManifest(activePack, names), `${slug(activePack.name)}-pack.json`);
+                        // Contract: the Android bridge imports a folder containing
+                        // exactly `pack.json` — never a renamed variant.
+                        downloadText(packManifest(activePack, names), 'pack.json');
                       }}
                     >
                       ⬇ pack.json manifest
@@ -568,7 +581,9 @@ export default function Stickers(): React.ReactElement {
                           if (!s) continue;
                           try {
                             const url = await stickerToDataUrl(s, 'image/png');
-                            downloadUrl(url, `${slug(activePack.name)}-${String(i + 1).padStart(2, '0')}.png`);
+                            // Contract: file names MUST match pack.json (`sticker_NN.png`)
+                            // so the Android bridge imports the folder with zero renames.
+                            downloadUrl(url, `sticker_${String(i + 1).padStart(2, '0')}.png`);
                           } catch {
                             /* keep exporting the rest */
                           }
@@ -578,10 +593,33 @@ export default function Stickers(): React.ReactElement {
                     >
                       ⬇ Export all PNGs
                     </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => {
+                        const firstId = activePack.stickerIds[0];
+                        const s = items.find((x) => x.id === firstId);
+                        if (!s) {
+                          setNotice({ kind: 'bad', text: 'Add a sticker to the pack first.' });
+                          return;
+                        }
+                        void stickerToTrayUrl(s).then((u) => downloadUrl(u, 'tray_icon.png'));
+                      }}
+                    >
+                      ⬇ tray_icon.png
+                    </button>
                   </div>
                   <div style={{ marginTop: '0.6rem' }}>
-                    <ShareBox
-                      kind="pack"
+                    <div className="notice" role="note">
+                      <strong>📲 Sending this pack to the LoveKit Android bridge?</strong> Put these exact files in
+                      one folder (no renames — the names match <code>pack.json</code>):
+                      <code>pack.json</code> · <code>tray_icon.png</code> ·{' '}
+                      <code>sticker_01.png … sticker_{String(activePack.stickerIds.length).padStart(2, '0')}.png</code>.
+                      Then choose the folder inside the bridge app — it validates everything before WhatsApp ever
+                      sees it.
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '0.6rem' }}>
+                    <ShareBox                      kind="pack"
                       label="sticker pack"
                       buildPayload={() => ({
                         name: activePack.name,

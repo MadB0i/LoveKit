@@ -7,6 +7,16 @@ import type { Sticker, StickerElement } from './types';
 export const STICKER_PX = 512;
 
 const imgCache = new Map<string, HTMLImageElement>();
+/** Bound the decode cache: 100-sticker packs on a phone must not OOM it. */
+const IMG_CACHE_MAX = 40;
+
+function cacheImage(src: string, img: HTMLImageElement): void {
+  imgCache.set(src, img);
+  if (imgCache.size > IMG_CACHE_MAX) {
+    const oldest = imgCache.keys().next();
+    if (!oldest.done) imgCache.delete(oldest.value);
+  }
+}
 
 export function loadStickerImage(src: string): Promise<HTMLImageElement> {
   const hit = imgCache.get(src);
@@ -14,7 +24,7 @@ export function loadStickerImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      imgCache.set(src, img);
+      cacheImage(src, img);
       resolve(img);
     };
     img.onerror = () => reject(new Error('image'));
@@ -97,7 +107,7 @@ export async function renderSticker(
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, STICKER_PX, STICKER_PX);
   }
-  for (const el of sticker.elements) {
+  for (const el of sticker.elements ?? []) {
     try {
       await drawElement(ctx, el);
     } catch {

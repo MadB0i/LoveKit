@@ -1,0 +1,8 @@
+# Machine-local + generated — never commit.
+local.properties
+.gradle/
+build/
+app/build/
+captures/
+*.iml
+.idea/

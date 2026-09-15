@@ -17,21 +17,25 @@ export default function CardPreview({
 }): React.ReactElement {
   const theme = getTheme(card.themeId);
   const reduced = useReducedMotion();
-  const typed = useTypewriter(card.animation === 'typewriter' && animate && !reduced ? card.message : '', 30);
-  const message = card.animation === 'typewriter' && animate && !reduced ? typed : card.message;
+  // Defensive defaults: cards may arrive from old storage shapes or hand-made
+  // share links, so never assume optional fields exist.
+  const effects = card.effects ?? [];
+  const message = card.message ?? '';
+  const typed = useTypewriter(card.animation === 'typewriter' && animate && !reduced ? message : '', 30);
+  const shown = card.animation === 'typewriter' && animate && !reduced ? typed : message;
 
   const layers = useMemo(() => {
     if (!animate || reduced) return null;
     return (
       <>
-        {(card.effects.includes('hearts') || card.animation === 'hearts') && <FloatEmojis emoji="❤️" />}
-        {card.effects.includes('float-emoji') && <FloatEmojis emoji={card.emoji || '✨'} />}
-        {card.effects.includes('confetti') && <Confetti />}
-        {card.effects.includes('sparkles') && <Sparkles />}
+        {(effects.includes('hearts') || card.animation === 'hearts') && <FloatEmojis emoji="❤️" />}
+        {effects.includes('float-emoji') && <FloatEmojis emoji={card.emoji || '✨'} />}
+        {effects.includes('confetti') && <Confetti />}
+        {effects.includes('sparkles') && <Sparkles />}
         {(card.animation === 'confetti' || card.animation === 'sparkles') && <Sparkles />}
       </>
     );
-  }, [animate, reduced, card.effects, card.animation, card.emoji]);
+  }, [animate, reduced, effects, card.animation, card.emoji]);
 
   const font = FONT_STACK[theme.font];
   return (
@@ -51,7 +55,7 @@ export default function CardPreview({
           ♥
         </div>
         {card.photo && <img className="photo" src={card.photo} alt="A photo you chose for this card" />}
-        <p className="msg">{message || <span style={{ opacity: 0.6 }}>Your words will bloom here…</span>}</p>
+        <p className="msg">{shown || <span style={{ opacity: 0.6 }}>Your words will bloom here…</span>}</p>
         <div className="from" style={{ color: theme.accent }}>
           {card.fromName ? `— ${card.fromName}` : ''}
         </div>

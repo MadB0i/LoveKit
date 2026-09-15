@@ -218,11 +218,11 @@ function RevealBlock({
       <h2 style={{ marginTop: 0 }}>
         {title}: {score.matches}/{score.total} {score.matches === score.total ? '🏆' : score.matches >= Math.ceil(score.total / 2) ? '💛' : '🫶'}
       </h2>
-      <div style={{ display: 'grid', gap: '0.6rem' }}>
+      <div style={{ display: 'grid', gap: '0.6rem' }} role="list" aria-label="Answer comparison">
         {questions.map((q) => {
           const match = score.perQuestion.find((p) => p.id === q.id)?.match;
           return (
-            <div key={q.id} className={`quiz-opt ${match ? 'correct' : 'wrong'}`} style={{ cursor: 'default' }}>
+            <div key={q.id} className={`quiz-opt ${match ? 'correct' : 'wrong'}`} style={{ cursor: 'default' }} role="listitem">
               <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{q.prompt}</div>
               <div>
                 {match ? '✅' : '❌'} Truth: <strong>{selfAnswers[q.id]}</strong>

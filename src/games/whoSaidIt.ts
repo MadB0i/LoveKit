@@ -34,6 +34,17 @@ export function createStatement(text: string, author: Person): WhoStatement | nu
   return { id: uid('ws'), text: t, author };
 }
 
+/**
+ * Frame-of-reference map for the guess buttons. Statement authors are stored
+ * in the WRITER's frame ('me' = writer, 'you' = guesser), but the guesser taps
+ * "ME" (themselves) or "YOU" (the writer) — the opposite assignment.
+ * Centralised (and tested) here because getting it backwards silently inverts
+ * every score while the UI still looks right.
+ */
+export function guesserVote(aboutGuesser: boolean): Person {
+  return aboutGuesser ? 'you' : 'me';
+}
+
 export function scoreWhoSaidIt(
   statements: WhoStatement[],
   guesses: Record<string, Person>,

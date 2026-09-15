@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppCompat (no Material dep needed for this tiny bridge). -->
+    <style name="Theme.LoveKitBridge" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#8f3d2c</item>
+        <item name="colorPrimaryDark">#2b1a22</item>
+        <item name="colorAccent">#b3543f</item>
+        <item name="android:windowBackground">#faf6ee</item>
+    </style>
+</resources>

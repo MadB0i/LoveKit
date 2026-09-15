@@ -72,16 +72,18 @@ export default function ThisOrThat(): React.ReactElement {
             <p className="hint">Reminder: this measures taste overlap, not love. Love is the part where you do their pick anyway. ❤️</p>
           </div>
           <div className="panel">
+            <div role="list" aria-label="Taste comparison">
             {THIS_OR_THAT_PAIRS.map((pair) => {
               const match = picksA[pair.id] === picksB[pair.id];
               return (
-                <div key={pair.id} className={`quiz-opt ${match ? 'correct' : 'wrong'}`} style={{ cursor: 'default' }}>
+                <div key={pair.id} className={`quiz-opt ${match ? 'correct' : 'wrong'}`} style={{ cursor: 'default' }} role="listitem">
                   {match ? '💛' : '😄'} {nameA}: <strong>{picksA[pair.id]}</strong> · {nameB}:{' '}
                   <strong>{picksB[pair.id]}</strong>
                   {match && <> — date idea unlocked!</>}
                 </div>
               );
             })}
+            </div>
             <div className="share-box" style={{ marginTop: '0.8rem' }}>
               <button
                 className="btn btn-ghost"

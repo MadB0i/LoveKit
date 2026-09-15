@@ -6,10 +6,11 @@ import WritingHelper from '../components/WritingHelper';
 import { THEMES } from '../data/themes';
 import { CARD_CATEGORIES, TEMPLATES, categoryLabel, fillTemplate } from '../data/templates';
 import { downloadCardPng } from '../lib/cardExport';
-import { downscaleDataUrl, fileToDataUrl } from '../lib/images';
+import { checkImageFile, downscaleDataUrl, fileToDataUrl } from '../lib/images';
 import { startLullaby, stopLullaby } from '../lib/music';
+import { takeInboundShare, type InboundShare } from '../lib/pwa';
 import { cleanName, cleanText } from '../lib/sanitize';
-import { KEYS, load, save, uid } from '../lib/store';
+import { KEYS, isCard, loadArray, save, uid } from '../lib/store';
 import type { CardAnimation, CardEffect, LoveCard } from '../lib/types';
 
 const EFFECTS: { id: CardEffect; label: string }[] = [
@@ -50,18 +51,30 @@ function blankCard(): LoveCard {
 export default function Cards(): React.ReactElement {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [saved, setSaved] = useState<LoveCard[]>(() => load<LoveCard[]>(KEYS.cards, []));
+  const [saved, setSaved] = useState<LoveCard[]>(() => loadArray(KEYS.cards, isCard));
   const [card, setCard] = useState<LoveCard>(blankCard);
   const [notice, setNotice] = useState<{ kind: 'good' | 'bad'; text: string } | null>(null);
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
   const [sharePhoto, setSharePhoto] = useState<string | undefined>(undefined);
+  // One-shot intake from the Web Share Target (Android share → LoveKit).
+  const [inbound, setInbound] = useState<InboundShare | null>(() => (id ? null : takeInboundShare()));
+
+  useEffect(() => {
+    if (!inbound || id) return;
+    const shared = [inbound.text, inbound.url].filter(Boolean).join('\n');
+    if (!shared) {
+      setInbound(null);
+      return;
+    }
+    setCard((c) => (c.message ? c : { ...c, message: shared, updatedAt: Date.now() }));
+  }, [inbound, id]);
 
   // Load a saved card when the route carries an id.
   useEffect(() => {
     if (!id) return;
-    const found = load<LoveCard[]>(KEYS.cards, []).find((c) => c.id === id);
+    const found = loadArray(KEYS.cards, isCard).find((c) => c.id === id);
     if (found) {
       setCard(found);
       setNotice(null);
@@ -124,8 +137,9 @@ export default function Cards(): React.ReactElement {
 
   const onPhoto = async (file: File | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setNotice({ kind: 'bad', text: 'That file is not an image. Try a JPG or PNG.' });
+    const problem = checkImageFile(file);
+    if (problem) {
+      setNotice({ kind: 'bad', text: problem });
       return;
     }
     setBusy(true);
@@ -191,6 +205,27 @@ export default function Cards(): React.ReactElement {
         <p className={`notice ${notice.kind === 'good' ? 'good' : 'bad'}`} role={notice.kind === 'good' ? 'status' : 'alert'}>
           {notice.text}
         </p>
+      )}
+      {inbound && !id && (
+        <div className="notice good" role="status">
+          📥 Shared into LoveKit{inbound.title ? <>: “{inbound.title}”</> : ''} —{' '}
+          {card.message ? 'your draft already has words, so nothing was overwritten.' : 'it’s waiting in your message box.'}{' '}
+          {card.message && (
+            <button
+              className="btn btn-sm btn-ink"
+              onClick={() => {
+                const shared = [inbound.text, inbound.url].filter(Boolean).join('\n');
+                set('message', `${card.message}\n\n${shared}`);
+                setInbound(null);
+              }}
+            >
+              Append shared text
+            </button>
+          )}{' '}
+          <button className="btn btn-sm btn-ghost" onClick={() => setInbound(null)}>
+            Dismiss
+          </button>
+        </div>
       )}
 
       <div className="stage">

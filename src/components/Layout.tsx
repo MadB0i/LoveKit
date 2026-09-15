@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { DEFAULT_SETTINGS, KEYS, load, save, type AppSettings } from '../lib/store';
+import { applySWUpdate, consumeInboundShare, registerSW, useOnline } from '../lib/pwa';
+import { KEYS, loadSettings, save, type AppSettings } from '../lib/store';
 
 function applyTheme(theme: AppSettings['theme']): void {
   const root = document.documentElement;
@@ -11,7 +12,7 @@ function applyTheme(theme: AppSettings['theme']): void {
 }
 
 export function useSettings(): [AppSettings, (s: AppSettings) => void] {
-  const [settings, setSettings] = useState<AppSettings>(() => load(KEYS.settings, DEFAULT_SETTINGS));
+  const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   useEffect(() => {
     applyTheme(settings.theme);
     document.documentElement.classList.toggle('reduce-motion', settings.reduceMotion);
@@ -19,7 +20,7 @@ export function useSettings(): [AppSettings, (s: AppSettings) => void] {
   }, [settings]);
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
-    const onChange = () => applyTheme(load(KEYS.settings, DEFAULT_SETTINGS).theme);
+    const onChange = () => applyTheme(loadSettings().theme);
     mq?.addEventListener?.('change', onChange);
     return () => mq?.removeEventListener?.('change', onChange);
   }, []);
@@ -37,10 +38,20 @@ const LINKS = [
 
 export default function Layout(): React.ReactElement {
   const [settings, setSettings] = useSettings();
+  const online = useOnline();
+  const [updateReg, setUpdateReg] = useState<ServiceWorkerRegistration | null>(null);
   const cycleTheme = () => {
     const next = settings.theme === 'light' ? 'dark' : settings.theme === 'dark' ? 'system' : 'light';
     setSettings({ ...settings, theme: next });
   };
+  // PWA: register worker, listen for version updates, swallow inbound shares.
+  useEffect(() => {
+    registerSW((reg) => setUpdateReg(reg));
+    consumeInboundShare();
+    const onController = () => window.location.reload();
+    navigator.serviceWorker?.addEventListener?.('controllerchange', onController);
+    return () => navigator.serviceWorker?.removeEventListener?.('controllerchange', onController);
+  }, []);
   return (
     <div className="shell">
       <a className="skip-link" href="#main">
@@ -75,6 +86,23 @@ export default function Layout(): React.ReactElement {
         </div>
       </header>
       <main className="wrap" id="main">
+        {!online && (
+          <p className="notice warn offline-bar" role="status">
+            📴 You’re offline — everything on this device still works (studio, stickers, games, memories, capsules).
+            Only the optional custom AI endpoint needs internet.
+          </p>
+        )}
+        {updateReg && (
+          <div className="notice good update-bar" role="status">
+            ✨ A fresh LoveKit is ready.{' '}
+            <button
+              className="btn btn-sm btn-ink"
+              onClick={() => applySWUpdate(updateReg)}
+            >
+              Update now
+            </button>
+          </div>
+        )}
         <Outlet />
       </main>
       <footer className="footer">

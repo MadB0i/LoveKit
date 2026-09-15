@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- No INTERNET, no accounts, no extra permissions: SAF needs none,
+         WhatsApp reads our exported provider under ITS read permission. -->
+
+    <!-- Package visibility (Android 11+) for WhatsApp presence checks. -->
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LoveKitBridge">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.PackDetailActivity"
+            android:exported="false" />
+
+        <!-- Official WhatsApp sticker-pack contract (see WhatsApp/stickers
+             sample app). Authority MUST start with our package name. -->
+        <provider
+            android:name=".provider.StickerContentProvider"
+            android:authorities="app.lovekit.bridge.stickerprovider"
+            android:enabled="true"
+            android:exported="true"
+            android:readPermission="com.whatsapp.sticker.READ" />
+    </application>
+</manifest>

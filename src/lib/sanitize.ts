@@ -42,6 +42,17 @@ export function isImageDataUrl(url: string): boolean {
   return /^data:image\/(png|jpeg|webp|gif);base64,/i.test(url);
 }
 
+/**
+ * Raster-only gate for UNTRUSTED image URLs (share links, imports).
+ * Deliberately excludes `image/svg+xml`: SVG can carry scripts/event
+ * handlers. (`<img>`-rendered SVG doesn't execute them, but exported,
+ * downloaded or canvas-drawn copies travel further — so we refuse SVG
+ * at the door and render nothing instead of something surprising.)
+ */
+export function isRasterImageDataUrl(url: string): boolean {
+  return /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(url);
+}
+
 /** Names: short, single-line, no markup. */
 export function cleanName(input: unknown): string {
   return cleanText(input, 60).replace(/\s+/g, ' ');

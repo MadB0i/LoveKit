@@ -9,6 +9,19 @@ export interface DownscaleOptions {
   mime?: 'image/jpeg' | 'image/webp' | 'image/png';
 }
 
+/** Refuse absurd uploads BEFORE decoding (a 50 MP photo can OOM a cheap phone). */
+export const IMAGE_MAX_BYTES = 25 * 1024 * 1024;
+
+/** Returns a friendly reason, or null when the file is worth decoding. */
+export function checkImageFile(file: Blob): string | null {
+  if (!file.type.startsWith('image/')) return 'That file is not an image. Try a JPG, PNG or WebP.';
+  if (file.size === 0) return 'That file looks empty or corrupt. Try another one.';
+  if (file.size > IMAGE_MAX_BYTES) {
+    return `That photo is huge (${(file.size / 1048576).toFixed(0)} MB). Please pick one under 25 MB.`;
+  }
+  return null;
+}
+
 /** Load a File/Blob into an <img> via object URL. */
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

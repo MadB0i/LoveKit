@@ -9,7 +9,7 @@
   --card: #fffdf8;
   --ink: #2c2126;
   --ink-soft: #5d4c52;
-  --muted: #8d7a80;
+  --muted: #74616a;
   --line: #e7dac8;
   --accent: #b3543f;
   --accent-deep: #8f3d2c;
@@ -71,7 +71,7 @@ body {
 
 /* ---------- shell ---------- */
 
-.shell { min-height: 100vh; display: flex; flex-direction: column; }
+.shell { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); }
 .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 1rem; }
 main.wrap { flex: 1; padding-bottom: 4rem; }
 
@@ -100,6 +100,15 @@ main.wrap { flex: 1; padding-bottom: 4rem; }
 }
 .nav a:hover { background: var(--accent-soft); color: var(--ink); }
 .nav a.active { background: var(--ink); color: var(--paper); }
+
+/* Small phones: the brand tagline and gaps shrink so nav stays reachable. */
+@media (max-width: 560px) {
+  .brand small { display: none; }
+  .brand { font-size: 1.05rem; }
+  .topbar-in { gap: 0.4rem; padding: 0.55rem 0.7rem; }
+  .nav a { padding: 0.5rem 0.55rem; font-size: 0.82rem; }
+  .hero { padding-top: 2rem; }
+}
 .icon-btn {
   border: 1px solid var(--line); background: var(--card); color: var(--ink);
   border-radius: 999px; width: 38px; height: 38px; display: grid; place-items: center;
@@ -263,16 +272,28 @@ a.feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg)
   background:
     repeating-conic-gradient(#cfcfcf 0% 25%, #f4f4f4 0% 50%) 0 0 / 24px 24px;
   border-radius: var(--radius); border: 1px solid var(--line);
-  display: grid; place-items: center; padding: 1.2rem; touch-action: none;
+  display: grid; place-items: center; padding: 1.2rem;
+  /* NOTE: touch-action:none lives on the <canvas> only — the wrapper keeps
+     default panning so users can still scroll past the editor on phones. */
 }
 [data-theme="dark"] .sticker-canvas-wrap { background: repeating-conic-gradient(#3a3235 0% 25%, #2a2226 0% 50%) 0 0 / 24px 24px; }
-.sticker-canvas-wrap canvas { width: min(100%, 420px); height: auto; cursor: grab; border-radius: 12px; }
+.sticker-canvas-wrap canvas { width: min(100%, 420px); height: auto; cursor: grab; border-radius: 12px; touch-action: none; }
 .toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .el-list { display: grid; gap: 0.5rem; margin-top: 0.8rem; }
 .el-row { display: flex; align-items: center; gap: 0.5rem; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.45rem 0.6rem; background: var(--paper-2); font-size: 0.86rem; }
 .el-row[aria-current="true"] { border-color: var(--accent); }
 .el-row .grow { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 input[type="range"] { accent-color: var(--accent); }
+
+/* Colour wells need a real touch target on phones. */
+input[type="color"] {
+  width: 46px; height: 34px; padding: 2px; border: 1.5px solid var(--line);
+  border-radius: 8px; background: var(--card); cursor: pointer;
+}
+
+/* PWA surfaces */
+.install-card { margin-bottom: 0; }
+.offline-bar, .update-bar { margin: 1rem 0 0; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
 
 /* ---------- timeline / coupons / misc ---------- */
 

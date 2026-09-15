@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import ShareBox from '../components/ShareBox';
-import { exportLocalKey, isUnlocked, lockRemaining, sealCapsule, unsealCapsule } from '../lib/capsules';
+import { exportLocalKey, isCapsuleCryptoAvailable, isUnlocked, lockRemaining, sealCapsule, unsealCapsule } from '../lib/capsules';
 import { cleanText } from '../lib/sanitize';
-import { KEYS, load, save } from '../lib/store';
+import { KEYS, isCapsule, loadArray, save } from '../lib/store';
 import type { TimeCapsule } from '../lib/types';
 
 function toLocalInput(ts: number): string {
@@ -12,7 +12,7 @@ function toLocalInput(ts: number): string {
 }
 
 export default function Capsules(): React.ReactElement {
-  const [items, setItems] = useState<TimeCapsule[]>(() => load<TimeCapsule[]>(KEYS.capsules, []));
+  const [items, setItems] = useState<TimeCapsule[]>(() => loadArray(KEYS.capsules, isCapsule));
   const [form, setForm] = useState({
     title: '',
     message: '',
@@ -81,6 +81,12 @@ export default function Capsules(): React.ReactElement {
         <p>“If we’re still us in 2030, I hope we remember…” — seal it, wait, weep happily.</p>
       </div>
       {notice && <p className={`notice ${notice.kind === 'good' ? 'good' : notice.kind === 'warn' ? 'warn' : 'bad'}`} role="status">{notice.text}</p>}
+      {!isCapsuleCryptoAvailable() && (
+        <p className="notice warn" role="alert">
+          This browser can’t do real encryption (insecure connection or very old device). Capsules sealed here are
+          only <em>hidden</em>, not encrypted — use a modern browser on https for the real thing.
+        </p>
+      )}
 
       <div className="stage">
         <div className="panel">

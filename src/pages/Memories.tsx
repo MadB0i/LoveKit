@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import ShareBox from '../components/ShareBox';
-import { downscaleDataUrl, fileToDataUrl } from '../lib/images';
+import { checkImageFile, downscaleDataUrl, fileToDataUrl } from '../lib/images';
 import { cleanText } from '../lib/sanitize';
-import { KEYS, load, save, uid } from '../lib/store';
+import { KEYS, isMemory, loadArray, save, uid } from '../lib/store';
 import type { Memory } from '../lib/types';
 
 export default function Memories(): React.ReactElement {
-  const [items, setItems] = useState<Memory[]>(() => load<Memory[]>(KEYS.memories, []));
+  const [items, setItems] = useState<Memory[]>(() => loadArray(KEYS.memories, isMemory));
   const [form, setForm] = useState({ title: '', date: '', description: '', location: '', tags: '', photo: undefined as string | undefined, thumb: undefined as string | undefined });
   const [filter, setFilter] = useState('');
   const [notice, setNotice] = useState('');
@@ -20,6 +20,11 @@ export default function Memories(): React.ReactElement {
 
   const onPhoto = async (file: File | undefined) => {
     if (!file) return;
+    const problem = checkImageFile(file);
+    if (problem) {
+      setNotice(problem);
+      return;
+    }
     setBusy(true);
     try {
       const url = await fileToDataUrl(file, { maxDim: 1000, quality: 0.8 });

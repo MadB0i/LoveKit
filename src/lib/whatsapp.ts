@@ -26,6 +26,14 @@ export const WA_TRAY_MAX_KB = 50;
 export const WA_PACK_MIN = 3;
 export const WA_PACK_MAX = 30;
 
+/**
+ * Frozen pack-manifest schema version. The future Android wrapper keys off
+ * `format` + `version`: version 1 manifests MUST keep the shape documented
+ * in the README ("Sticker pack schema"). Bump only with a migration note.
+ */
+export const PACK_SCHEMA_VERSION = 1;
+export const PACK_SCHEMA_FORMAT = 'lovekit-sticker-pack';
+
 export interface PackCheck {
   ok: boolean;
   errors: string[];
@@ -55,8 +63,8 @@ export function validatePack(pack: Pick<StickerPack, 'name' | 'author'>, sticker
 export function packManifest(pack: StickerPack, stickerNames: { id: string; name: string }[]): string {
   return JSON.stringify(
     {
-      format: 'lovekit-sticker-pack',
-      version: 1,
+      format: PACK_SCHEMA_FORMAT,
+      version: PACK_SCHEMA_VERSION,
       android: {
         identifier: `lovekit.${pack.id.toLowerCase().replace(/[^a-z0-9]+/g, '')}`,
         publisher: cleanText(pack.author, 120),
@@ -105,12 +113,12 @@ export const IMPORT_STEPS: { title: string; body: string }[] = [
     body: 'Export each sticker as PNG (512×512, transparent). They already meet WhatsApp’s size requirements.',
   },
   {
-    title: 'Use a sticker-maker app as the bridge',
-    body: 'Browsers can’t add stickers to WhatsApp directly. Send the PNGs to your phone and import them with any reputable “Sticker Maker” app (create pack → add PNGs → Add to WhatsApp).',
+    title: 'Use the LoveKit Android bridge (recommended)',
+    body: 'Install the bridge from android/ in this repo, export pack.json + tray_icon.png + sticker_01.png … into one folder, and tap Import. It validates everything and performs WhatsApp’s official add flow — no renames, no third-party apps.',
   },
   {
-    title: 'Or wire up the Android wrapper later',
-    body: 'Developers: the exported pack.json manifest matches the shape an Android ContentProvider wrapper needs. See the README roadmap.',
+    title: 'Or use a sticker-maker app as the bridge',
+    body: 'Send the PNGs to your phone and import them with any reputable “Sticker Maker” app (create pack → add PNGs → Add to WhatsApp).',
   },
 ];
 
@@ -146,6 +154,47 @@ export function slug(name: string, fallback = 'sticker'): string {
 export function stickerSizeLabel(bytes: number): { text: string; over: boolean } {
   const kb = bytes / 1024;
   return { text: `${kb.toFixed(0)} KB`, over: kb > WA_STICKER_MAX_KB };
+}
+
+export interface ManifestCheck {
+  ok: boolean;
+  errors: string[];
+}
+
+/**
+ * Validate an *imported* pack.json (bridge input, file import, tests).
+ * Same rules the exporter guarantees — the Android wrapper runs this before
+ * touching WhatsApp. Rejects wrong format/version, bad counts, bad names.
+ */
+export function validatePackManifest(raw: unknown): ManifestCheck {
+  const errors: string[] = [];
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return { ok: false, errors: ['Not a pack manifest object.'] };
+  }
+  const m = raw as Record<string, unknown>;
+  if (m.format !== PACK_SCHEMA_FORMAT) errors.push(`Unknown format (want "${PACK_SCHEMA_FORMAT}").`);
+  if (m.version !== PACK_SCHEMA_VERSION) {
+    errors.push(`Unsupported manifest version (want ${PACK_SCHEMA_VERSION}).`);
+  }
+  if (!cleanText(typeof m.name === 'string' ? m.name : '', 120)) errors.push('Pack needs a name.');
+  if (!cleanText(typeof m.author === 'string' ? m.author : '', 120)) errors.push('Pack needs an author.');
+  if (!Array.isArray(m.stickers)) {
+    errors.push('Manifest needs a stickers array.');
+  } else {
+    if (m.stickers.length < WA_PACK_MIN || m.stickers.length > WA_PACK_MAX) {
+      errors.push(`Pack needs ${WA_PACK_MIN}–${WA_PACK_MAX} stickers (has ${m.stickers.length}).`);
+    }
+    m.stickers.forEach((s, i) => {
+      const r = (s ?? {}) as Record<string, unknown>;
+      if (typeof r.file !== 'string' || !/^sticker_\d{2}\.(png|webp)$/.test(r.file)) {
+        errors.push(`Sticker #${i + 1} has a bad file name (want sticker_NN.png).`);
+      }
+      if (!Array.isArray(r.emoji) || r.emoji.length === 0) {
+        errors.push(`Sticker #${i + 1} needs at least one emoji.`);
+      }
+    });
+  }
+  return { ok: errors.length === 0, errors };
 }
 
 export { clampInt };

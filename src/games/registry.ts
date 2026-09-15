@@ -26,7 +26,7 @@ export const GAMES: GameDef[] = [
     title: 'How Well Do You Know Me?',
     tagline: 'Answer separately, reveal together.',
     description:
-      'Pick 5 questions. Each of you secretly writes what you think the OTHER would answer… then compare and count the matches.',
+      'Each of you answers 5 questions about yourself, then guesses the other’s answers. Compare, laugh, learn.',
     route: '/games/know-me',
     players: '2 players · pass-and-play',
     duration: '≈ 10 min',

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ShareBox from '../components/ShareBox';
 import { cleanText } from '../lib/sanitize';
-import { KEYS, load, save, uid } from '../lib/store';
+import { KEYS, isCoupon, loadArray, save, uid } from '../lib/store';
 import type { Coupon } from '../lib/types';
 
 const IDEAS = [
@@ -30,19 +30,21 @@ function couponCode(): string {
 }
 
 export default function Coupons(): React.ReactElement {
-  const [items, setItems] = useState<Coupon[]>(() => load<Coupon[]>(KEYS.coupons, []));
+  const [items, setItems] = useState<Coupon[]>(() => loadArray(KEYS.coupons, isCoupon));
   const [form, setForm] = useState({ title: '', description: '', designId: 'rose', expiry: '' });
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState<{ kind: 'good' | 'bad'; text: string } | null>(null);
 
   const persist = (list: Coupon[]) => {
     setItems(list);
-    save(KEYS.coupons, list);
+    if (!save(KEYS.coupons, list).ok) {
+      setNotice({ kind: 'bad', text: 'Storage is full or blocked — screenshot your coupons to keep them!' });
+    }
   };
 
   const add = () => {
     const title = cleanText(form.title, 80);
     if (!title) {
-      setNotice('Name your coupon first — “1 Free Hug” is a classic for a reason.');
+      setNotice({ kind: 'bad', text: 'Name your coupon first — “1 Free Hug” is a classic for a reason.' });
       return;
     }
     const c: Coupon = {
@@ -57,7 +59,7 @@ export default function Coupons(): React.ReactElement {
     };
     persist([c, ...items]);
     setForm({ title: '', description: '', designId: 'rose', expiry: '' });
-    setNotice('Coupon created — send it and await the grin. ❤️');
+    setNotice({ kind: 'good', text: 'Coupon created — send it and await the grin. ❤️' });
   };
 
   const designOf = (id: string) => DESIGNS.find((d) => d.id === id) ?? DESIGNS[0];
@@ -68,7 +70,7 @@ export default function Coupons(): React.ReactElement {
         <h1 style={{ fontFamily: 'var(--font-display)', margin: 0 }}>🎟️ Love coupons</h1>
         <p>Promises, beautifully printed. Honour system enforced by love.</p>
       </div>
-      {notice && <p className="notice good" role="status">{notice}</p>}
+      {notice && <p className={`notice ${notice.kind}`} role="status">{notice.text}</p>}
 
       <div className="stage">
         <div className="panel">

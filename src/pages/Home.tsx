@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Confetti } from '../components/Effects';
+import InstallPrompt from '../components/InstallPrompt';
 
 const FEATURES = [
   { to: '/cards', emoji: '💌', title: 'Love cards', body: 'A beautiful editor with heartfelt starters, themes and animations. Download, share, swoon.' },
@@ -37,9 +38,12 @@ export default function Home(): React.ReactElement {
         </div>
       </section>
 
+      <div style={{ marginTop: '1.2rem' }}>
+        <InstallPrompt />
+      </div>
+
       <section className="section" aria-label="Features">
-        <div className="grid cols-3">
-          {FEATURES.map((f) => (
+        <div className="grid cols-3">          {FEATURES.map((f) => (
             <Link key={f.to} to={f.to} className="feature-card">
               <span className="f-emoji" aria-hidden="true">
                 {f.emoji}

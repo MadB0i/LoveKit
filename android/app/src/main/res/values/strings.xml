@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">LoveKit Bridge</string>
+
+    <string name="home_title">❤️ LoveKit</string>
+    <string name="home_sub">Sticker Bridge — from the web studio into WhatsApp.</string>
+    <string name="import_folder">📁 Import pack folder</string>
+    <string name="import_zip">🗜 Import pack .zip</string>
+    <string name="import_hint">Export a pack in LoveKit Web (pack.json + tray_icon.png + sticker_01.png … in one folder), then pick that folder — or a .zip of it — here.</string>
+    <string name="importing">Importing and validating…</string>
+    <string name="imported_ok">“%1$s” is ready. ❤️</string>
+    <string name="recent">Recent packs</string>
+    <string name="empty_packs">No packs yet. Make something beautiful in LoveKit Web first. 💌</string>
+    <!-- EN-only V1: counts here are always ≥3 in valid packs, so full
+         <plurals> would add machinery without a user-visible difference. -->
+    <string name="pack_meta" tools:ignore="PluralsCandidate">by %1$s · %2$d stickers</string>
+    <string name="pack_meta_long" tools:ignore="PluralsCandidate">by %1$s · %2$d stickers\n%3$s</string>
+
+    <string name="check_tray">Tray icon 96×96, under 50 KB</string>
+    <string name="tray_desc">Pack icon</string>
+    <string name="check_stickers" tools:ignore="PluralsCandidate">%1$d/%2$d stickers valid (512×512, under 100 KB)</string>
+    <string name="check_count" tools:ignore="PluralsCandidate">%1$d stickers (need 3–30)</string>
+    <string name="check_manifest">LoveKit pack manifest valid (schema v1)</string>
+
+    <string name="add_to_whatsapp">Add to WhatsApp</string>
+    <string name="delete_pack">Delete pack</string>
+    <string name="deleted">Pack deleted.</string>
+    <string name="pack_gone">That pack is gone.</string>
+    <string name="no_whatsapp">WhatsApp isn\'t installed on this device.</string>
+    <string name="whitelist_added">✅ This pack is in WhatsApp.</string>
+    <string name="whitelist_not_added">Not in WhatsApp yet — tap “Add to WhatsApp” above.</string>
+    <string name="whitelist_unknown">Couldn\'t ask WhatsApp about this pack (too old, or unavailable).</string>
+    <string name="added_ok">Your sticker pack is ready in WhatsApp ❤️</string>
+    <string name="add_cancelled">Not added — no worries, the pack stays here.</string>
+    <string name="add_unconfirmed">WhatsApp didn\'t confirm the pack. Try again, or check inside WhatsAppʼs sticker picker.</string>
+    <string name="status_error">❌ %1$s</string>
+    <string name="check_row">%1$s %2$s</string>
+</resources>

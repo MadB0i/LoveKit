@@ -6,9 +6,9 @@ import { THIS_OR_THAT_PAIRS, overlapLabel, scoreThisOrThat } from '../games/this
 import { scoreWhoSaidIt, type Person } from '../games/whoSaidIt';
 import { importSharedKey, isUnlocked, lockRemaining, unsealCapsule } from '../lib/capsules';
 import { startLullaby, stopLullaby } from '../lib/music';
-import { cleanText } from '../lib/sanitize';
+import { cleanText, isRasterImageDataUrl } from '../lib/sanitize';
 import { asSafeList, asSafeRecord, decodeShare } from '../lib/share';
-import { KEYS, load, save, uid } from '../lib/store';
+import { KEYS, isCard, loadArray, save, uid } from '../lib/store';
 import type { CardAnimation, CardEffect, LoveCard } from '../lib/types';
 
 function parseJsonArray(s: string): string[] {
@@ -24,11 +24,19 @@ function parseJsonRecord(s: string): Record<string, string> {
     const v: unknown = JSON.parse(s);
     if (typeof v !== 'object' || v === null) return {};
     const out: Record<string, string> = {};
-    for (const [k, val] of Object.entries(v as Record<string, unknown>)) out[k] = cleanText(String(val ?? ''), 500);
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+      out[k] = cleanText(String(val ?? ''), 500);
+    }
     return out;
   } catch {
     return {};
   }
+}
+
+/** Untrusted image gate: non-raster payloads render as nothing, not as a surprise. */
+function raster(s: string | undefined): string | undefined {
+  return s && isRasterImageDataUrl(s) ? s : undefined;
 }
 
 export default function Receive(): React.ReactElement {
@@ -123,14 +131,14 @@ function ReceivedCard({
     effects: (data.effects || 'hearts').split(',').filter(Boolean) as CardEffect[],
     animation: (data.animation as CardAnimation) || 'reveal',
     emoji: data.emoji || '❤️',
-    photo: data.photo || undefined,
+    photo: raster(data.photo),
     dateLabel: data.date || data.dateLabel || undefined,
     music: data.music === '1',
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
   const keep = () => {
-    const list = load<LoveCard[]>(KEYS.cards, []);
+    const list = loadArray(KEYS.cards, isCard);
     save(KEYS.cards, [card, ...list]);
   };
   return (
@@ -186,7 +194,7 @@ function ReceivedMemory({ data }: { data: Record<string, string> }): React.React
   return (
     <article className="feature-card memory-card">
       <p className="eyebrow">A memory, shared with you 📸</p>
-      {data.photo && <img src={data.photo} alt={`Shared memory: ${data.title}`} />}
+      {raster(data.photo) && <img src={raster(data.photo)} alt={`Shared memory: ${data.title}`} />}
       <h2 style={{ margin: '0.4rem 0' }}>{data.title || 'A memory'}</h2>
       <p className="hint">
         📅 {data.date} {data.location ? `· 📍 ${data.location}` : ''}
@@ -426,9 +434,11 @@ function WhoSaidItChallenge({ data }: { data: Record<string, string> }): React.R
 /* ---------------- sticker & pack ---------------- */
 
 function ReceivedSticker({ data }: { data: Record<string, string> }): React.ReactElement {
+  const image = raster(data.image);
   const saveImage = () => {
+    if (!image) return;
     const a = document.createElement('a');
-    a.href = data.image;
+    a.href = image;
     a.download = 'lovekit-sticker.png';
     document.body.appendChild(a);
     a.click();
@@ -438,14 +448,17 @@ function ReceivedSticker({ data }: { data: Record<string, string> }): React.Reac
     <div className="panel" style={{ textAlign: 'center' }}>
       <p className="eyebrow">A sticker, handmade for you 😍</p>
       <h2 style={{ marginTop: 0 }}>{data.name || 'A sticker'}</h2>
-      {data.image && (
-        <img src={data.image} alt={`Sticker: ${data.name}`} style={{ width: 'min(100%, 320px)', imageRendering: 'auto' }} />
+      {image && (
+        <img src={image} alt={`Sticker: ${data.name}`} style={{ width: 'min(100%, 320px)', imageRendering: 'auto' }} />
       )}
+      {!image && <p className="notice warn">This sticker’s image didn’t survive the trip — ask your person to send the PNG directly. ❤️</p>}
+      {image && (
       <p>
         <button className="btn btn-primary btn-sm" onClick={saveImage}>
           ⬇ Download PNG (512×512)
         </button>
       </p>
+      )}
       <p className="hint">Then import it into WhatsApp via any sticker-maker app. ❤️</p>
     </div>
   );

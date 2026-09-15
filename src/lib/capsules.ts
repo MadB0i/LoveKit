@@ -20,7 +20,7 @@
 
 import type { TimeCapsule } from './types';
 import { uid } from './store';
-import { cleanText } from './sanitize';
+import { clampInt, cleanText } from './sanitize';
 
 const enc = () => new TextEncoder();
 const dec = () => new TextDecoder();
@@ -40,6 +40,15 @@ function unb64(s: string): Uint8Array {
 
 function hasCrypto(): boolean {
   return typeof crypto !== 'undefined' && !!crypto.subtle;
+}
+
+/** Public probe so the UI can warn when only the obfuscated fallback is available. */
+export function isCapsuleCryptoAvailable(): boolean {
+  try {
+    return hasCrypto();
+  } catch {
+    return false;
+  }
 }
 
 /* Separate key storage: prefers localStorage, falls back to memory (tests). */
@@ -82,8 +91,6 @@ interface SealedEnvelope {
   ct: string;
   salt: string;
   iters: number;
-  /** Random device-key half for passphrase-less capsules (base64). Absent when passphrase used. */
-  k?: string;
 }
 
 async function deriveKey(pass: string, salt: Uint8Array, iters: number): Promise<CryptoKey> {
@@ -117,7 +124,8 @@ export async function sealCapsule(opts: {
     throw new Error('Pick a future unlock date.');
   }
   const hasPass = !!opts.passphrase;
-  // Fallback for non-secure contexts (file://, old browsers): obfuscated envelope.
+  // Fallback for non-secure contexts (plain http, very old browsers):
+  // an obfuscated — NOT encrypted — envelope. The UI warns about this.
   if (!hasCrypto()) {
     const sealed = JSON.stringify({
       v: 1,
@@ -125,7 +133,6 @@ export async function sealCapsule(opts: {
       ct: b64(enc().encode(message)),
       salt: '',
       iters: 0,
-      k: undefined,
     } satisfies SealedEnvelope);
     return {
       id: uid('cap'),
@@ -197,12 +204,20 @@ export async function unsealCapsule(c: TimeCapsule, passphrase = '', now = Date.
   }
   const [tag, payload] = c.sealed.split('.', 2);
   if (!payload) throw new Error('This capsule is damaged.');
+  let env: SealedEnvelope;
+  try {
+    env = JSON.parse(dec().decode(unb64(payload))) as SealedEnvelope;
+  } catch {
+    throw new Error('This capsule is damaged.');
+  }
   if (tag === 'plain1') {
-    const env = JSON.parse(dec().decode(unb64(payload))) as SealedEnvelope;
     return dec().decode(unb64(env.ct));
   }
   if (tag !== 'aes1') throw new Error('Unknown capsule format.');
-  const env = JSON.parse(dec().decode(unb64(payload))) as SealedEnvelope;
+  // `iters` arrives inside a potentially attacker-crafted envelope (shared
+  // links). Clamp it: absurd values would either DoS the receiver's CPU
+  // (10M PBKDF2 rounds) or silently weaken derivation.
+  const iters = clampInt(env.iters, 1, 500_000, 120_000);
   let pass: string;
   if (c.hasPassphrase) {
     if (!passphrase) throw new Error('This capsule needs its passphrase.');
@@ -213,7 +228,7 @@ export async function unsealCapsule(c: TimeCapsule, passphrase = '', now = Date.
   }
   if (!hasCrypto()) throw new Error('This device cannot unlock capsules.');
   try {
-    const key = await deriveKey(pass, unb64(env.salt), env.iters);
+    const key = await deriveKey(pass, unb64(env.salt), iters);
     const pt = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: unb64(env.iv) as BufferSource },
       key,

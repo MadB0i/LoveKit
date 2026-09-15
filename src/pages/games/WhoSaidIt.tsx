@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import ShareBox from '../../components/ShareBox';
-import { WHO_SAID_IDEAS, createStatement, scoreWhoSaidIt, whoSaidVerdict, type Person, type WhoStatement } from '../../games/whoSaidIt';
+import { WHO_SAID_IDEAS, createStatement, guesserVote, scoreWhoSaidIt, whoSaidVerdict, type Person, type WhoStatement } from '../../games/whoSaidIt';
 import { cleanName } from '../../lib/sanitize';
 
 export default function WhoSaidIt(): React.ReactElement {
@@ -119,7 +119,7 @@ export default function WhoSaidIt(): React.ReactElement {
             <button
               className="btn btn-primary"
               onClick={() => {
-                const next = { ...guesses, [current.id]: 'you' as Person };
+                const next = { ...guesses, [current.id]: guesserVote(true) };
                 setGuesses(next);
                 if (guessIndex + 1 >= statements.length) setPhase('reveal');
                 else setGuessIndex(guessIndex + 1);
@@ -130,7 +130,7 @@ export default function WhoSaidIt(): React.ReactElement {
             <button
               className="btn btn-ink"
               onClick={() => {
-                const next = { ...guesses, [current.id]: 'me' as Person };
+                const next = { ...guesses, [current.id]: guesserVote(false) };
                 setGuesses(next);
                 if (guessIndex + 1 >= statements.length) setPhase('reveal');
                 else setGuessIndex(guessIndex + 1);
@@ -151,15 +151,17 @@ export default function WhoSaidIt(): React.ReactElement {
             <p>{whoSaidVerdict(result.correct, result.total)}</p>
           </div>
           <div className="panel">
+            <div role="list" aria-label="Score breakdown">
             {statements.map((s) => {
               const ok = guesses[s.id] === s.author;
               return (
-                <div key={s.id} className={`quiz-opt ${ok ? 'correct' : 'wrong'}`} style={{ cursor: 'default' }}>
+                <div key={s.id} className={`quiz-opt ${ok ? 'correct' : 'wrong'}`} style={{ cursor: 'default' }} role="listitem">
                   {ok ? '✅' : '❌'} “{s.text}” — it was <strong>{s.author === 'me' ? w : g}</strong>
                   {!ok && <>, {g} said {guesses[s.id] === 'me' ? w : g}</>}
                 </div>
               );
             })}
+            </div>
             <div className="share-box" style={{ marginTop: '0.8rem' }}>
               <button
                 className="btn btn-ghost"

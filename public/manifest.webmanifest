@@ -1,0 +1,22 @@
+{
+  "name": "LoveKit — Build moments, not algorithms",
+  "short_name": "LoveKit",
+  "description": "The open-source toolkit for meaningful relationships: love cards, WhatsApp stickers, couple games, memories, coupons and time capsules. Private, local-first, no accounts.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#2b1a22",
+  "theme_color": "#2b1a22",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  }
+}

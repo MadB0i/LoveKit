@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { buildShareUrl, encodeShare, SHARE_COMFORTABLE_LIMIT, type ShareKind } from '../lib/share';
 
 /**
@@ -6,6 +6,10 @@ import { buildShareUrl, encodeShare, SHARE_COMFORTABLE_LIMIT, type ShareKind } f
  * Encodes any JSON-able payload into a `#/l/<code>` link. No accounts,
  * no server. Warns honestly when photos make a link too long, and offers
  * a compact photo-free alternative.
+ *
+ * NOTE: the link is (re)computed on every render while visible — deliberately
+ * NOT memoised — so it always encodes the CURRENT editor state. A stale
+ * useMemo here once shipped links containing empty first-render data.
  */
 export default function ShareBox({
   kind,
@@ -22,14 +26,26 @@ export default function ShareBox({
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
-  const { code, url, tooLong } = useMemo(() => {
-    try {
-      const c = encodeShare(kind, buildPayload(withPhotos));
-      return { code: c, url: buildShareUrl(c), tooLong: c.length > SHARE_COMFORTABLE_LIMIT };
-    } catch {
-      return { code: '', url: '', tooLong: false };
-    }
-  }, [kind, withPhotos]);
+  if (!revealed) {
+    return (
+      <button className="btn btn-ink" onClick={() => setRevealed(true)}>
+        🔗 Create shareable surprise link
+      </button>
+    );
+  }
+
+  // Fresh on every render: always matches what the user sees right now.
+  let code = '';
+  let url = '';
+  let tooLong = false;
+  try {
+    code = encodeShare(kind, buildPayload(withPhotos));
+    url = buildShareUrl(code);
+    tooLong = code.length > SHARE_COMFORTABLE_LIMIT;
+  } catch {
+    code = '';
+    url = '';
+  }
 
   const copy = async () => {
     try {
@@ -46,11 +62,12 @@ export default function ShareBox({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (!revealed) {
+  if (!code) {
     return (
-      <button className="btn btn-ink" onClick={() => setRevealed(true)}>
-        🔗 Create shareable surprise link
-      </button>
+      <p className="notice bad" role="alert">
+        Could not pack this surprise into a link (it may be too large). Try without the photo, or share the
+        downloaded file instead.
+      </p>
     );
   }
 

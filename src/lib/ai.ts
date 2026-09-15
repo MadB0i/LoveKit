@@ -110,21 +110,39 @@ export class CustomEndpointProvider implements WritingProvider {
 
   async transform(req: TransformRequest, signal?: AbortSignal): Promise<string> {
     if (!/^https:\/\//.test(this.endpoint)) throw new Error('Endpoint must be an https:// URL.');
-    const res = await fetch(this.endpoint, {
-      method: 'POST',
-      signal,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.apiKey}` },
-      body: JSON.stringify({
-        model: this.model,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `Tone: ${req.tone}. Context: ${req.context ?? 'note'}\n\nDraft:\n${req.text}` },
-        ],
-        max_tokens: 300,
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(this.endpoint, {
+        method: 'POST',
+        signal,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.apiKey}` },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: `Tone: ${req.tone}. Context: ${req.context ?? 'note'}\n\nDraft:\n${req.text}` },
+          ],
+          max_tokens: 300,
+        }),
+      });
+    } catch {
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      throw new Error(
+        offline
+          ? 'You look offline — the custom helper needs internet. Turn off “Use it” above and the offline helper takes over.'
+          : 'Could not reach the helper service. Check the endpoint URL and your connection.',
+      );
+    }
     if (!res.ok) throw new Error(`Helper service replied ${res.status}. Check your endpoint and key.`);
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    // Read as text with a hard cap BEFORE parsing: a malicious or broken
+    // endpoint must not be able to blow up memory with a giant body.
+    const raw = (await res.text()).slice(0, 50_000);
+    let json: { choices?: { message?: { content?: string } }[] };
+    try {
+      json = JSON.parse(raw) as { choices?: { message?: { content?: string } }[] };
+    } catch {
+      throw new Error('The helper replied with something unreadable. Check your endpoint.');
+    }
     const out = cleanText(json.choices?.[0]?.message?.content ?? '', 2000);
     if (!out) throw new Error('The helper returned nothing. Try again.');
     return out;

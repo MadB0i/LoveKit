@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- tools:ignore=ObsoleteSdkInt: adaptive-icon XML must stay in a -v26 folder for aapt2. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="ObsoleteSdkInt">
+    <background android:drawable="@color/ic_bg" />
+    <foreground android:drawable="@drawable/lovekit_mark" />
+    <monochrome android:drawable="@drawable/lovekit_mark" />
+</adaptive-icon>

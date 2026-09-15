@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- adaptive-icon XML must live in mipmap-anydpi-v26 for aapt2 resource
+         linking; with minSdk 26 this is correct, not obsolete. -->
+    <issue id="ObsoleteSdkInt" severity="ignore" />
+</lint>

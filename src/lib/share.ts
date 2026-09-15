@@ -148,6 +148,11 @@ export function asSafeRecord(data: unknown, maxField = 2000): Record<string, str
   for (const [k, v] of Object.entries(data as Record<string, unknown>)) {
     const key = cleanText(k, 40);
     if (!key) continue;
+    // Prototype-pollution guard: JSON.parse already creates safe OWN
+    // properties, but re-assignment through `out[key]` would hit setters.
+    // String values make `__proto__` assignment a silent no-op today;
+    // skip the risky keys anyway so future edits can't regress this.
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
     // Photos travel as data-URLs; cap them at the decode budget (150 KB of
     // bytes ≈ 200k base64 chars) so a link can't blow up receiver memory,
     // and so images aren't silently truncated into corrupt files.

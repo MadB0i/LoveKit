@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isUnlocked, lockRemaining, sealCapsule, unsealCapsule } from '../src/lib/capsules';
+import { exportLocalKey, isUnlocked, lockRemaining, sealCapsule, unsealCapsule } from '../src/lib/capsules';
+import { buildShareUrl, decodeShare, encodeShare } from '../src/lib/share';
 
 describe('time capsules', () => {
   it('stays locked before the date — even the seal never holds plaintext', async () => {
@@ -61,5 +62,49 @@ describe('time capsules', () => {
     await new Promise((r) => setTimeout(r, 60));
     await expect(unsealCapsule({ ...cap, sealed: 'zzz.QUJD' })).rejects.toThrow(/Unknown|damaged/);
     await expect(unsealCapsule({ ...cap, sealed: 'no-separator-here' })).rejects.toThrow(/damaged/);
+  });
+
+  it('RED TEAM: a passphrase-protected share link leaks zero plaintext', async () => {
+    const secret = 'redteam-monsson-drive-secret';
+    const cap = await sealCapsule({
+      title: 'Future us',
+      message: secret,
+      unlockAt: Date.now() + 86_400_000,
+      passphrase: 'our-song-lyric',
+    });
+    // Exactly what Capsules.tsx puts into a share link (no key — receiver
+    // must know the passphrase).
+    const code = encodeShare('capsule', {
+      id: cap.id,
+      title: cap.title,
+      sealed: cap.sealed,
+      unlockAt: String(cap.unlockAt),
+      hint: '',
+      hasPassphrase: '1',
+    });
+    const url = buildShareUrl(code);
+    expect(url).not.toContain(secret);
+    expect(url).not.toContain(encodeURIComponent(secret));
+    const res = decodeShare(code);
+    expect(res.ok).toBe(true);
+    if (!res.ok) throw new Error('decode failed');
+    const blob = JSON.stringify(res.data);
+    expect(blob).not.toContain(secret);
+    // And the sealed blob alone cannot be opened without the passphrase,
+    // even past the unlock date.
+    const opened = { ...cap, unlockAt: Date.now() - 1000 };
+    await expect(unsealCapsule(opened, 'wrong-guess')).rejects.toThrow(/passphrase/i);
+    await expect(unsealCapsule(opened, '')).rejects.toThrow(/passphrase/i);
+  });
+
+  it('RED TEAM documents the no-passphrase trade-off honestly', async () => {
+    const cap = await sealCapsule({ title: 'Hi', message: 'open-secret', unlockAt: Date.now() + 50 });
+    // Without a passphrase the key lives on the sender device; the share
+    // flow re-exports it (link secrecy = security — UI says exactly this).
+    const key = exportLocalKey(cap.id);
+    expect(key.startsWith('auto:')).toBe(true);
+    const code = encodeShare('capsule', { id: cap.id, sealed: cap.sealed, key });
+    const res = decodeShare(code);
+    expect(res.ok).toBe(true);
   });
 });

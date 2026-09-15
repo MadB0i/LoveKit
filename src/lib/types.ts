@@ -16,6 +16,7 @@ export type CardCategory =
   | 'long-distance'
   | 'feeling-low'
   | 'proposal'
+  | 'date-night'
   | 'just-because'
   | 'custom';
 

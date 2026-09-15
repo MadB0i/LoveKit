@@ -26,6 +26,10 @@ export const THIS_OR_THAT_PAIRS: ThisThatPair[] = [
   { id: 'season', a: '🌧️ Rainy days', b: '☀️ Sunny days' },
   { id: 'party', a: '🎉 Big party', b: '🕯️ Cosy two-person night' },
   { id: 'gift', a: '🎁 Surprise gift', b: '💌 Love letter' },
+  { id: 'datenight', a: '🕯️ Candlelight dinner', b: '✨ Stargazing picnic' },
+  { id: 'slow', a: '💃 Kitchen slow dance', b: '🚗 Midnight long drive' },
+  { id: 'dress', a: '👗 Dress up for each other', b: '🛋️ Blanket fort + takeout' },
+  { id: 'romance', a: '💋 A whispered plan', b: '💌 A handwritten note' },
 ];
 
 export function recordPick(picks: Record<string, string>, pairId: string, side: string): Record<string, string> {

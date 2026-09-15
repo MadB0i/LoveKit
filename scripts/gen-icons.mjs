@@ -47,9 +47,11 @@ function toPng(w, h, rgba) {
 }
 
 const PLUM = [43, 26, 34];
-const CLAY = [179, 84, 63];
-const CREAM = [248, 236, 221];
+const ROSE = [110, 53, 66];
+const EMBER = [179, 84, 63];
+const CREAM = [250, 240, 228];
 const GOLD = [232, 176, 75];
+const BLUSH = [240, 166, 160];
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -61,7 +63,9 @@ function heart(x, y) {
 }
 
 /**
- * Render an icon.
+ * Render an icon: deep plum → rose → ember gradient, candlelight glow,
+ * vignette, and TWO overlapping hearts — one cream, one gold —
+ * because LoveKit is for two real people, not one.
  * @param {number} size canvas px
  * @param {boolean} maskable full-bleed + artwork inside the 80% safe zone
  */
@@ -69,7 +73,12 @@ function render(size, maskable) {
   const px = new Uint8ClampedArray(size * size * 4);
   const r = size / 2;
   const corner = maskable ? 0 : size * 0.225; // iOS-style squircle-ish radius
-  const heartScale = maskable ? size * 0.30 : size * 0.30;
+  const s = maskable ? size * 0.72 : size; // artwork scale (safe zone)
+  const cx = r;
+  const cy = r * 1.02;
+  // Big cream heart (slightly left-low) + small gold heart (right-high).
+  const big = { x: cx - s * 0.055, y: cy + s * 0.03, k: s * 0.30 };
+  const small = { x: cx + s * 0.20, y: cy - s * 0.20, k: s * 0.155 };
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const i = (y * size + x) * 4;
@@ -84,24 +93,50 @@ function render(size, maskable) {
           alpha = d <= corner ? 1 : 0;
         }
       }
-      // Vertical gradient + candlelight glow top-left.
+      // Three-stop vertical gradient: plum → rose → ember.
       const t = y / (size - 1);
-      let R = lerp(PLUM[0], CLAY[0], t);
-      let G = lerp(PLUM[1], CLAY[1], t);
-      let B = lerp(PLUM[2], CLAY[2], t);
-      const gd = Math.hypot(x - size * 0.3, y - size * 0.28) / size;
-      const glow = Math.max(0, 1 - gd * 2.2) * 0.25;
+      const mid = t < 0.55 ? t / 0.55 : 1;
+      const top = t < 0.55 ? PLUM : ROSE;
+      const bot = t < 0.55 ? ROSE : EMBER;
+      const tt = t < 0.55 ? mid : (t - 0.55) / 0.45;
+      let R = lerp(top[0], bot[0], tt);
+      let G = lerp(top[1], bot[1], tt);
+      let B = lerp(top[2], bot[2], tt);
+      // Candlelight glow, upper-left.
+      const gd = Math.hypot(x - size * 0.3, y - size * 0.26) / size;
+      const glow = Math.max(0, 1 - gd * 2.1) * 0.28;
       R = lerp(R, GOLD[0], glow);
       G = lerp(G, GOLD[1], glow);
       B = lerp(B, GOLD[2], glow);
-      // Cream heart, y-flipped, softly anti-aliased.
-      const hx = (x - r) / heartScale;
-      const hy = -(y - r * 1.06) / heartScale;
-      const h = heart(hx, hy);
-      const inside = clamp01(0.5 - h * 6);
-      R = lerp(R, CREAM[0], inside);
-      G = lerp(G, CREAM[1], inside);
-      B = lerp(B, CREAM[2], inside);
+      // Gentle vignette for depth.
+      const vd = Math.hypot(x - r, y - r) / r;
+      const vig = 1 - Math.max(0, vd - 0.72) * 0.35;
+      R *= vig;
+      G *= vig;
+      B *= vig;
+      // Hearts, y-flipped, softly anti-aliased. Small one first (behind).
+      const paint = (h, col) => {
+        const hx = (x - h.x) / h.k;
+        const hy = -(y - h.y) / h.k;
+        const inside = clamp01(0.5 - heart(hx, hy) * 7);
+        R = lerp(R, col[0], inside);
+        G = lerp(G, col[1], inside);
+        B = lerp(B, col[2], inside);
+        return inside;
+      };
+      paint(small, BLUSH);
+      const bigIn = paint(big, CREAM);
+      // Gold rim light on the big heart's upper-left edge.
+      if (bigIn > 0.02 && bigIn < 0.98) {
+        const hx = (x - big.x) / big.k;
+        const hy = -(y - big.y) / big.k;
+        if (hx < 0 && hy > 0) {
+          const rim = (1 - bigIn) * 0.7;
+          R = lerp(R, GOLD[0], rim);
+          G = lerp(G, GOLD[1], rim);
+          B = lerp(B, GOLD[2], rim);
+        }
+      }
       px[i] = R;
       px[i + 1] = G;
       px[i + 2] = B;

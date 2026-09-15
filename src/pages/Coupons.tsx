@@ -11,6 +11,8 @@ const IDEAS = [
   { title: 'Long Call', description: 'One uninterrupted, rambling, wonderful call. Tea mandatory.' },
   { title: 'Surprise Date', description: 'Planned entirely by you. Budget: thoughtfulness.' },
   { title: 'One Big Apology', description: 'For the next small foot-in-mouth moment. Use wisely.' },
+  { title: 'Date Night, My Treat', description: 'Dinner, setting, playlist — planned by me. Phones on silent, your call on everything else. 💋' },
+  { title: 'Uninterrupted Evening', description: 'No friends, no family, no notifications. Just us, for one whole evening. 💋' },
   { title: 'Your Choice ❤️', description: 'A blank cheque of kindness. The holder decides.' },
 ];
 

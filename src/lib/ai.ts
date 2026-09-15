@@ -196,6 +196,9 @@ export const DISCUSSION_STARTERS: string[] = [
   'What is one tradition you want us to start?',
   'What is the kindest thing anyone has ever done for you?',
   'What would you do with a surprise free weekend together?',
+  'What does your ideal date night look like — set the scene for me?',
+  'What is one small thing that makes you feel wanted?',
+  'When did you feel closest to me lately, and what were we doing?',
 ];
 
 export function pickStarters(count: number, seed = Date.now()): string[] {

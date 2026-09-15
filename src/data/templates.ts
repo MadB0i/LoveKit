@@ -30,6 +30,7 @@ export const CARD_CATEGORIES: Category[] = [
   { id: 'long-distance', label: 'Long Distance', emoji: '✈️', hint: 'Miles are just logistics' },
   { id: 'feeling-low', label: 'Feeling Low', emoji: '🫂', hint: 'Sit beside them in it' },
   { id: 'proposal', label: 'Proposal', emoji: '💍', hint: 'The biggest question' },
+  { id: 'date-night', label: 'Date Night', emoji: '💋', hint: 'Set the mood, tastefully' },
   { id: 'just-because', label: 'Just Because', emoji: '✨', hint: 'No occasion needed' },
   { id: 'custom', label: 'Custom', emoji: '✍️', hint: 'Blank page, your words' },
 ];
@@ -184,6 +185,42 @@ export const TEMPLATES: MessageTemplate[] = [
     category: 'proposal',
     title: 'The question',
     body: '{{partner}}, every love story is beautiful, but I want ours to be my forever. Will you marry me? 💍',
+  },
+  {
+    id: 'date-1',
+    category: 'date-night',
+    title: 'Phones on silent',
+    body: 'Tonight, {{partner}}: phones on silent, candles on, and nowhere else to be. Just us, good food, and whatever the evening turns into. 💋',
+  },
+  {
+    id: 'date-2',
+    category: 'date-night',
+    title: 'You, that outfit',
+    body: 'Wear that thing I love, {{partner}}. I’ll handle dinner, the playlist, and staring at you like it’s our first date. 💋',
+  },
+  {
+    id: 'date-3',
+    category: 'date-night',
+    title: 'Kitchen slow dance',
+    body: 'No restaurant tonight, {{partner}}. Just bare feet, your head on my shoulder, and one song on repeat. The rest of the night is unwritten — your call. 💋',
+  },
+  {
+    id: 'date-4',
+    category: 'date-night',
+    title: 'Stargazing plan',
+    body: '{{partner}}, blanket, rooftop (or balcony, or the car roof — I’m flexible), and the sky. I’ll bring the snacks and the compliments. You bring yourself. ✨💋',
+  },
+  {
+    id: 'date-5',
+    category: 'date-night',
+    title: 'Anticipation note',
+    body: 'I’ve been thinking about tonight all day, {{partner}}. About your laugh, your hands, the way you look at me. Hurry home. 💋',
+  },
+  {
+    id: 'date-6',
+    category: 'date-night',
+    title: 'Your pace',
+    body: 'Tonight is whatever you want it to be, {{partner}} — wild or quiet, out or in. My only plan is you, and making sure you feel completely wanted. 💋',
   },
   {
     id: 'just-1',
